@@ -1,3 +1,8 @@
+const StatsD = require('hot-shots');
+const dogstatsd = new StatsD;
+
+
+
 const https = require('https');
 const http = require('http');
 const fs = require('fs');
@@ -10,10 +15,12 @@ const server = http.createServer((req, res) => {
     if(req.method !== 'GET') {
         res.end(`{"error": "${http.STATUS_CODES[405]}"}`);
     } else if(req.url === "/"){
+
         fs.readFile("./public/index.html", "UTF-8", (err, html) => {
             res.writeHead(200, {"Content-Type": "text/html"});
             res.end(html);
         });
+        dogstatsd.increment('page.views');
     } else if(req.url === "/index.js") {
         const filestream = fs.createReadStream("./public/index.js", "UTF-8");
         res.writeHead(200, {"Content-Type": "text/javascript"});
