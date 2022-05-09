@@ -58,7 +58,6 @@ const server = http.createServer((req, res) => {
                 res.end(html);
             });
         } else {
-
             https.get(buildUrl(baseUrl, params), (resp) => {
                 let data = '';
 
@@ -76,8 +75,7 @@ const server = http.createServer((req, res) => {
                     }
                     // split the string of numbers into an array
                     randomNumbers = numberStr.split("").map(num => Number(num));
-                    console.log(randomNumbers)
-                    uuidToGeneratedNumber.set(uuid, randomNumbers);
+                    uuidToGeneratedNumber.set(uuid, [randomNumbers, 0]);
                 });
             });
 
@@ -93,7 +91,11 @@ const server = http.createServer((req, res) => {
     } else if(req.url.includes('/guess')) {
         const uuid = req.url.split('/')[2];
         // if the random numbers are not here we need to regenerate random numbers
-        const randomNumbers = uuidToGeneratedNumber.get(uuid) || [8, 8, 8, 8];  
+        const guessInfo = uuidToGeneratedNumber.get(uuid) || [[NaN, NaN, NaN, NaN], Infinity];  
+        console.log(guessInfo);
+        const randomNumbers = guessInfo[0];
+        let attempts = guessInfo[1];
+
         console.log('the uuid is:', uuid, 'and the random numbes generated for this uuid is', randomNumbers);
         
         userGuesses = req.url.split('?')[1].split('&');
@@ -120,7 +122,11 @@ const server = http.createServer((req, res) => {
             if(randomNumbers[i] === guesses[i]) correctNumbersInPosition++;
         }
         // deleting the uuid from the map object will force a new set of random numbers
-        if(correctNumbersInPosition === 4) uuidToGeneratedNumber.delete(uuid);
+        if(correctNumbersInPosition === 4 || attempts === 10) {
+            uuidToGeneratedNumber.delete(uuid);
+        } else {
+            uuidToGeneratedNumber.set(uuid, [randomNumbers, ++attempts]);
+        }
 
         res.writeHead(200, {"Content-Type": "text/html"});
         res.end(correctNumbersInGuess + " " + correctNumbersInPosition);
