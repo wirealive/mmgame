@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "hot-shots": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.16"
   }
 }
