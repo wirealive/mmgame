@@ -23,7 +23,7 @@ submitBtn.addEventListener('click', () => {
     const guessThree = guessThreeInput.value;
     const guessFour = guessFourInput.value;
 
-    let url = `/guess/${roomId}/?guessOne=${guessOne}&guessTwo=${guessTwo}&guessThree=${guessThree}&guessFour=${guessFour}`
+    let url = `/guess/${roomId}/?a=${guessOne}&b=${guessTwo}&c=${guessThree}&d=${guessFour}`
 
     fetch(url).then(res => {
         return res.text();

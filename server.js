@@ -11,6 +11,9 @@ const port = process.env.port || 3000;
 // a regular expression that catches a uuid
 const matchRoomUrl = /^\/room\/[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi;
 
+
+const matchGuessUrl = /^\/guess\/[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}\/\?a=[0-7]&b=[0-7]&c=[0-7]&d=[0-7]$/;
+
 const baseUrl = "https://www.random.org/integers/";
 
 const params = {
@@ -109,6 +112,7 @@ function handleRoomUrl(req, res) {
 
 
 function handleGuessUrl(req, res) {
+    // this could fail
     const uuid = req.url.split('/')[2];
     // What should we do if we don't have a set of random Numbers generated for this room url?
     try {
@@ -147,28 +151,37 @@ function handleGuessUrl(req, res) {
             }
         }
 
+        // This shouldn't be the case unless the user was messing with the client side code
         if(correctNumsInPosition === 4) {
-            console.log('user already won');    
+            res.writeHead(400, {"Content-Type": "text/html"});
+            res.end('Game has ended. Please start a new game.');
+            // log this to data dog
         } else if (attempts === 10) {
-            // send back an unauthorized request 
-            console.log('user has already attempted at least 10 times');
+            res.writeHead(400, {"Content-Type": "text/html"});
+            res.end('Max attempts reached. Please start a new game.');
+            // log this to data dog as well.
         } else {
-            uuidToGeneratedNumber.set(uuid, [randomNumbers, ++attempts]);
+            ++guessInfo[1];
         }
+
         console.log('the uuid is:', uuid, 'and the random numbes generated for this uuid is', randomNumbers);
 
         res.writeHead(200, {"Content-Type": "text/html"});
         res.end(correctNumsNotInPosition + " " + correctNumsInPosition);
     } catch (err) {
+        // send error to data dog
         console.error(err);
-        res.end("0 0");
+        res.writeHead(500, {"Content-Type": "text/html"});
+        res.end("There has been error. Please try again at a later time.");
     }
 }
 
+// consider serving static files fron Nginx and logging that data to data dog
 const server = http.createServer((req, res) => {
     console.log(req.url);
     if(req.method !== 'GET') {
         // we don't want to handle any other HTTP method besides GET
+        res.writeHead(405, {"Content-Type": "text/html"});
         res.end(`{"error": "${http.STATUS_CODES[405]}"}`);
     } else if(req.url === "/") {
         handleRootUrl(req, res);
@@ -176,11 +189,11 @@ const server = http.createServer((req, res) => {
         handleRoomUrl(req, res);
     } else if(req.url === "/room/index.js") {
         // serving static js client code
-        // consider serving this fron Nginx and logging at that part of the stack
         const filestream = fs.createReadStream("./public/index.js", "UTF-8");
         res.writeHead(200, {"Content-Type": "text/javascript"});
         filestream.pipe(res);
-    } else if(req.url.includes('/guess')) {
+    } else if(matchGuessUrl.test(req.url)) {
+        console.log('making a guess. We hit this endpoint');
         handleGuessUrl(req, res);
     } else {
         res.writeHead(404, {"Content-Type": "text/html"});
