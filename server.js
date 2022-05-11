@@ -162,12 +162,10 @@ function handleGuessUrl(req, res) {
             // log this to data dog as well.
         } else {
             ++guessInfo[1];
+            console.log('the uuid is:', uuid, 'and the random numbes generated for this uuid is', randomNumbers);
+            res.writeHead(200, {"Content-Type": "text/html"});
+            res.end(correctNumsNotInPosition + " " + correctNumsInPosition);
         }
-
-        console.log('the uuid is:', uuid, 'and the random numbes generated for this uuid is', randomNumbers);
-
-        res.writeHead(200, {"Content-Type": "text/html"});
-        res.end(correctNumsNotInPosition + " " + correctNumsInPosition);
     } catch (err) {
         // send error to data dog
         console.error(err);
