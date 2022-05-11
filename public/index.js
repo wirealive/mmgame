@@ -2,6 +2,7 @@ const guessOneInput = document.querySelector('#guessOne');
 const guessTwoInput = document.querySelector('#guessTwo');
 const guessThreeInput = document.querySelector('#guessThree');
 const guessFourInput = document.querySelector('#guessFour');
+const guessCount = document.querySelector('#guessCount');
 
 const roomId = window.location.pathname.split('/')[2];
 const submitBtn = document.querySelector('#submit');
@@ -33,7 +34,7 @@ submitBtn.addEventListener('click', () => {
         const [rightNumbers, rightPosition] = text.split(' ');
 
         guessResults = `Your guess was: ${guessOne} ${guessTwo} ${guessThree} ${guessFour}. `; 
-        guessResults += `You guessed ${rightNumbers} right numbers. ${rightPosition} of those numbers are in their correct position.`;
+        guessResults += `You guessed ${rightNumbers} correct numbers in the wrong position. ${rightPosition} of those numbers are correct and in their correct position.`;
 
         newPTag.innerText = guessResults;
         guessDiv.appendChild(newPTag);
@@ -44,7 +45,10 @@ submitBtn.addEventListener('click', () => {
             addPlayAgain();
         }
         const guessDivChildrenCount = guessDiv.getElementsByTagName('*').length;
-        if(guessDivChildrenCount === 10) {
+        const guessesLeft = 10 - guessDivChildrenCount;
+        guessCount.textContent = `${guessesLeft} Guesses Left`;
+
+        if(guessesLeft === 0) {
             alert('You lost. Try again!');
             addPlayAgain();
         }

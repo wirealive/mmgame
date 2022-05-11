@@ -103,8 +103,8 @@ function handleRoomUrl(req, res) {
         });
     }
 
-    // serve static index html file
-    fs.readFile("./public/index.html", "UTF-8", (err, html) => {
+    // serve static index.html file
+    fs.readFile(__dirname + "/public/index.html", "UTF-8", (err, html) => {
         res.writeHead(200, {"Content-Type": "text/html"});
         res.end(html);
     });
@@ -187,9 +187,9 @@ const server = http.createServer((req, res) => {
         handleRootUrl(req, res);
     } else if(matchRoomUrl.test(req.url)) {
         handleRoomUrl(req, res);
-    } else if(req.url === "/room/index.js") {
+    } else if(req.url === "/index.js") {
         // serving static js client code
-        const filestream = fs.createReadStream("./public/index.js", "UTF-8");
+        const filestream = fs.createReadStream(__dirname + "/public/index.js", "UTF-8");
         res.writeHead(200, {"Content-Type": "text/javascript"});
         filestream.pipe(res);
     } else if(matchGuessUrl.test(req.url)) {
