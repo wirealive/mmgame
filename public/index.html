@@ -5,24 +5,21 @@
 <h4>Guess the 4 numbers in the correct order within 10 guesses and win!<h4>
 <div class="field">
     <label for="guessOne">Number 1:</label>
-    <input type="text" id="guessOne" name="guessOne" placeholder="Enter your guess for the first number here" />
+    <input  id="guessOne" name="guessOne" value="1" type="number" min="0" max="7" required />
 </div>
 <div class="field">
     <label for="guessTwo">Number 2:</label>
-    <input type="text" id="guessTwo" name="guessTwo" placeholder="Enter your guess for the second number here" />
+    <input  id="guessTwo" name="guessTwo" value="1" type="number" min="0" max="7" required />
 </div>
 <div class="field">
     <label for="guessThree">Number 3:</label>
-    <input type="text" id="guessThree" name="guessThree" placeholder="Enter your guess for the third number here" />
+    <input  id="guessThree" name="guessThree" value="1" type="number" min="0" max="7" required />
 </div>
 <div class="field">
     <label for="guessFour">Number 4:</label>
-    <input type="text" id="guessFour" name="guessFour" placeholder="Enter your guess for the fourth number here" />
+    <input  id="guessFour" name="guessFour" value="1" type="number" min="0" max="7" required />
 </div>
 <button id='submit' type="submit">Submit Guess</button>
 
-
-<h3 id='guessCount'>10 Guesses Left</h3>
-<div id='guesses'>
-</div>
+<div id='guesses'></div>
 <script type="text/javascript" src="/index.js"></script>

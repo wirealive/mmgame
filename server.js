@@ -3,16 +3,17 @@ const http = require('http');
 const fs = require('fs');
 const crypto = require("crypto");
 
+// used to send metrics to datadog
 const StatsD = require('hot-shots');
 const dogstatsd = new StatsD;
 
 const port = process.env.port || 3000;
 
-// a regular expression that catches a uuid
+// a regular expression that matches a room url
 const matchRoomUrl = /^\/room\/[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi;
 
-
-const matchGuessUrl = /^\/guess\/[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}\/\?a=[0-7]&b=[0-7]&c=[0-7]&d=[0-7]$/;
+// a regular expression that a guess url
+const matchGuessUrl = /^\/guess\/[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}\?a=[0-7]&b=[0-7]&c=[0-7]&d=[0-7]$/;
 
 const baseUrl = "https://www.random.org/integers/";
 
@@ -37,18 +38,16 @@ function buildUrl(baseUrl, params) {
 const uuidToGeneratedNumber = new Map();
 
 function handleRootUrl(req, res) {
-        const uuid = crypto.randomUUID();
-        // redirect to a room 
-        res.writeHead(302, {
-            location: `/room/${uuid}`
-        }).end();
-        dogstatsd.increment('page.views');
+    const uuid = crypto.randomUUID();
+    // redirect to a room 
+    res.writeHead(302, {
+        location: `/room/${uuid}`
+    }).end();
+    dogstatsd.increment('page.views');
 }
 
 function handleRoomUrl(req, res) {
-    // getting the uuid like this might break the api
     let uuid = req.url.split('/')[2]; 
-    console.log(uuid);
 
     // if we don't have random numbers generated for this UUID then fetch some
     // otherwise reuse what is in the map object
@@ -102,75 +101,94 @@ function handleRoomUrl(req, res) {
             console.error(`Got error: ${e.message}`);
         });
     }
-
-    // serve static index.html file
-    fs.readFile(__dirname + "/public/index.html", "UTF-8", (err, html) => {
+    // if curl is being used to play this game just return the api endpoint
+    if(req.headers['user-agent'].includes('curl')) {
         res.writeHead(200, {"Content-Type": "text/html"});
-        res.end(html);
-    });
+        let txtRes = 'Welcome to the game!\n'
+        txtRes += `Use this endpoint to make your guesses: /guess/${uuid}\n`;
+        txtRes += 'To submit a guess of 1, 1, 1, 1 make a request to the endpoint like this: '
+        txtRes += `/guess/${uuid}?a=1&b=1&c=1&d=1\n`;
+        res.end(txtRes);
+    } else {
+        // serve static index.html file
+        fs.readFile(__dirname + "/public/index.html", "UTF-8", (err, html) => {
+            res.writeHead(200, {"Content-Type": "text/html"});
+            res.end(html);
+        });
+    }
+
 }
 
 
 function handleGuessUrl(req, res) {
-    // this could fail
-    const uuid = req.url.split('/')[2];
+    const [url, query] = req.url.split('?');
+    const uuid = url.split('/')[2]
     // What should we do if we don't have a set of random Numbers generated for this room url?
     try {
-        const guessInfo = uuidToGeneratedNumber.get(uuid);  
-        console.log(guessInfo);
-        const randomNumbers = guessInfo[0];
-        let attempts = guessInfo[1];
+        const gameState = uuidToGeneratedNumber.get(uuid);  
+        const randomNumbers = gameState[0].slice();
+        const attempts = ++gameState[1];
 
-        userGuesses = req.url.split('?')[1].split('&');
-        guesses = [];
-        guessesInDict = {};
-        for(let guess of userGuesses) {
-            const numberGuess = Number(guess[guess.length - 1]);
-            guesses.push(numberGuess);
-            if(guessesInDict[numberGuess]) {
-                guessesInDict[numberGuess]++;
-            } else {
-                guessesInDict[numberGuess] = 1;
-            }
-        }
+        const queryParams = query.split('&');
+        const userGuess = queryParams.map(param => {
+            const [key, value] = param.split('=');
+            return Number(value);
+        });
 
-        let correctNumsInPosition = 0;
-        let correctNumsNotInPosition = 0;
+        let numsInPosition = 0;
+        let numsNotInPosition = 0;
 
+        console.log(userGuess);
+
+
+        // find numbers in the correct position
         for(let i = 0; i < randomNumbers.length; i++) {
-            if(randomNumbers[i] === guesses[i]) {
-                correctNumsInPosition++;
-                // mark this number as counted so that we don't double count
-                guesses[i] = 'x';
+            if(randomNumbers[i] === userGuess[i]) {
+                numsInPosition++;
+                // mark these numbers as counted so that we don't double count
+                userGuess[i] = 'y';
+                randomNumbers[i] = 'x';
             }
         }
 
+        console.log(userGuess);
+        // find numbers not in the correct position
         for(let i = 0; i < randomNumbers.length; i++) {
-            for(let j = 0; j < guesses.length; j++) {
-                if(randomNumbers[i] === guesses[j]) correctNumsNotInPosition++;
+            for(let j = 0; j < userGuess.length; j++) {
+                if(randomNumbers[i] === userGuess[j]) {
+                    userGuess[j] = 'y';
+                    randomNumbers[i] = 'x';
+                    numsNotInPosition++;
+                }
             }
         }
+        console.log(userGuess);
 
-        // This shouldn't be the case unless the user was messing with the client side code
-        if(correctNumsInPosition === 4) {
+        if(attempts > 10) {
             res.writeHead(400, {"Content-Type": "text/html"});
-            res.end('Game has ended. Please start a new game.');
-            // log this to data dog
-        } else if (attempts === 10) {
-            res.writeHead(400, {"Content-Type": "text/html"});
-            res.end('Max attempts reached. Please start a new game.');
+            res.end('This game has ended. Please start a new game.\n');
+            // log this to data dog since this shouldn't happen
+        } else if (numsInPosition === 4) {
+            res.writeHead(200, {"Content-Type": "text/html"});
+            res.end('You Won!\n');
+            // we want to make sure that they don't keep playing this same game
+            gameState[1] = 10;
             // log this to data dog as well.
         } else {
-            ++guessInfo[1];
             console.log('the uuid is:', uuid, 'and the random numbes generated for this uuid is', randomNumbers);
             res.writeHead(200, {"Content-Type": "text/html"});
-            res.end(correctNumsNotInPosition + " " + correctNumsInPosition);
+            // if this is the last attempt and the user did not guess correctly, then they lost.
+            if(attempts === 10 && numsInPosition !== 4) {
+                res.end(`You lost this game. Please start a new game.\n`);
+            } else {
+                res.end(`${numsNotInPosition} number(s) guessed is/are correct, but in the wrong position. ${numsInPosition} number(s) guessed is/are in the right position. You have ${10 - gameState[1]} attempt(s) left.\n`);
+            }
         }
     } catch (err) {
         // send error to data dog
         console.error(err);
         res.writeHead(500, {"Content-Type": "text/html"});
-        res.end("There has been error. Please try again at a later time.");
+        res.end("There has been error. Please try again at a later time.\n");
     }
 }
 
@@ -196,7 +214,7 @@ const server = http.createServer((req, res) => {
     } else {
         res.writeHead(404, {"Content-Type": "text/html"});
         res.end("No Page Found");
-        // log the url to datadog
+        // log the url requested to datadog
     }
 });
 

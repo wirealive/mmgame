@@ -2,7 +2,6 @@ const guessOneInput = document.querySelector('#guessOne');
 const guessTwoInput = document.querySelector('#guessTwo');
 const guessThreeInput = document.querySelector('#guessThree');
 const guessFourInput = document.querySelector('#guessFour');
-const guessCount = document.querySelector('#guessCount');
 
 const roomId = window.location.pathname.split('/')[2];
 const submitBtn = document.querySelector('#submit');
@@ -24,34 +23,24 @@ submitBtn.addEventListener('click', () => {
     const guessThree = guessThreeInput.value;
     const guessFour = guessFourInput.value;
 
-    let url = `/guess/${roomId}/?a=${guessOne}&b=${guessTwo}&c=${guessThree}&d=${guessFour}`
+    let url = `/guess/${roomId}?a=${guessOne}&b=${guessTwo}&c=${guessThree}&d=${guessFour}`
 
     fetch(url).then(res => {
         return res.text();
     }).then(text => {
         //update the webpage with the guess here
         let newPTag = document.createElement('p');
-        const [rightNumbers, rightPosition] = text.split(' ');
-
-        guessResults = `Your guess was: ${guessOne} ${guessTwo} ${guessThree} ${guessFour}. `; 
-        guessResults += `You guessed ${rightNumbers} correct numbers in the wrong position. ${rightPosition} of those numbers are correct and in their correct position.`;
-
-        newPTag.innerText = guessResults;
+        newPTag.innerText = text;
         guessDiv.appendChild(newPTag);
-        // the player has won!
-        if(rightPosition === '4') {
-            //tell the user they won
-            alert('You won!');
-            addPlayAgain();
-        }
-        const guessDivChildrenCount = guessDiv.getElementsByTagName('*').length;
-        const guessesLeft = 10 - guessDivChildrenCount;
-        guessCount.textContent = `${guessesLeft} Guesses Left`;
 
-        if(guessesLeft === 0) {
-            alert('You lost. Try again!');
+        console.log(text);
+        if(text.trim() === "You Won!" || text.trim() === "You lost this game. Please start a new game.") {
             addPlayAgain();
         }
+    })
+    .catch(err => {
+        // log err to datadog
+        console.log(err);
     });
 });
 
