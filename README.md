@@ -1,4 +1,18 @@
-# mmgame
+# MasterMind game
+
+## Cool Things
+    - All the game logic and validation is done at the server. This means you can't cheat by inspecting the code on the client side.
+    - This game can be played with Curl!
+    - The game can also be played at https://games.computerlinuxstuff.com
+    - The infra is being monitored using Datadog. Datadog is monitoring the Linode Ubuntu server, Nginx (used as a reverse proxy), and Node.js.
+    - The entire project runs on the node runtime and uses no external libraries on the server or the client side, just plain vanilla javascript. I do however use Datadogs library to send logs.
+
+## How To Run Locally
+
+    - I am using Node 16.5.0 on the server and my development machine. I use nvm to get the exact node version I want for a project and I recommend the same.
+    - run `npm install` inside the project directory
+    - I am using nodemon to restart the server everytime I make changes. `./nodemodules/nodemon/bin/nodemon.js server.js` but you can just run with node normally `node server.js`.
+    - That's it! the server runs on localhost:3000/
 
 ## Server Side Todos
 
