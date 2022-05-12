@@ -1,11 +1,17 @@
 # MasterMind game
 
-## Cool Things
-    - All the game logic and validation is done at the server. This means you can't cheat by inspecting the code on the client side.
-    - This game can be played with Curl!
-    - The game can also be played at https://games.computerlinuxstuff.com
-    - The infra is being monitored using Datadog. Datadog is monitoring the Linode Ubuntu server, Nginx (used as a reverse proxy), and Node.js.
-    - The entire project runs on the node runtime and uses no external libraries on the server or the client side, just plain vanilla javascript. I do however use Datadogs library to send logs.
+## How To Play With Curl
+    - Use the -L flag, this will ensure that you follow the redirects. Since I am using nginx on the server as a reverse proxy this flag is needed.
+    - Also, make sure that your url is in quotes, otherwise you will get errors.
+    - Keep in mind that if there is a slight typo in the url your request will be rejected.
+    - To start a game with curl type in `curl "games.computerlinuxstuff.com"` and your game will start :)
+
+![An example of playing this game with curl](https://i.imgur.com/V2TtzBd.png)
+
+
+## How To Play With Your Browser
+    - Visit https://games.computerlinuxstuff.com/
+
 
 ## How To Run Locally
 
@@ -13,6 +19,14 @@
     - run `npm install` inside the project directory
     - I am using nodemon to restart the server everytime I make changes. `./nodemodules/nodemon/bin/nodemon.js server.js` but you can just run with node normally `node server.js`.
     - That's it! the server runs on localhost:3000/
+
+## Cool Things
+    - All the game logic and validation is done at the server. This means you can't cheat by inspecting the code on the client side.
+    - This game can be played with Curl!
+    - The game can also be played at https://games.computerlinuxstuff.com
+    - The infra is being monitored using Datadog. Datadog is monitoring the Linode Ubuntu server, Nginx (used as a reverse proxy), and Node.js.
+    - The entire project runs on the node runtime and uses no external libraries on the server or the client side, just plain vanilla javascript. I do however use Datadogs library to send logs.
+    - SSL certificate provided by letsencrypt
 
 ## Server Side Todos
 
